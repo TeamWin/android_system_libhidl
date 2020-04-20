@@ -82,6 +82,7 @@ cc_library {
 // http://b/77320844
 cc_library {
     name: "libhidlbase_pgo",
+    recovery_available: true,
     defaults: [
         "libhidlbase-combined-impl",
         "hwbinder_benchmark_pgo",
