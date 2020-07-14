@@ -15,6 +15,8 @@
 cc_library {
     name: "libhidlmemory",
     vendor_available: true,
+    // TODO(b/153609531): remove when no longer needed.
+    native_bridge_supported: true,
     vndk: {
         enabled: true,
         support_system_process: true,
