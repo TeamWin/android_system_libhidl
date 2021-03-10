@@ -148,11 +148,6 @@ cc_defaults {
                 "libvndksupport",
             ],
         },
-        recovery: {
-            exclude_shared_libs: [
-                "libvndksupport",
-            ],
-        },
     },
 
     export_include_dirs: [
