@@ -277,10 +277,10 @@ static bool matchPackageName(const std::string& lib, std::string* matchedName,
 }
 
 static void registerReference(const hidl_string &interfaceName, const hidl_string &instanceName) {
-    if (kIsRecovery) {
+    //if (kIsRecovery) {
         // No hwservicemanager in recovery.
-        return;
-    }
+    //    return;
+    //}
 
     sp<IServiceManager1_0> binderizedManager = defaultServiceManager();
     if (binderizedManager == nullptr) {
