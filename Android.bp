@@ -20,6 +20,9 @@ cc_defaults {
         "-Werror",
         "-Wextra-semi",
     ],
+    include_dirs: [
+       "system/core/libvndksupport/include/"
+    ]
 }
 
 phony {
