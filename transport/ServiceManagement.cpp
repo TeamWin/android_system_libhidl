@@ -46,9 +46,7 @@
 #include <android-base/strings.h>
 #include <hwbinder/IPCThreadState.h>
 #include <hwbinder/Parcel.h>
-#if !defined(__ANDROID_RECOVERY__) && defined(__ANDROID__)
 #include <vndksupport/linker.h>
-#endif
 
 #include <android/hidl/manager/1.2/BnHwServiceManager.h>
 #include <android/hidl/manager/1.2/BpHwServiceManager.h>
@@ -62,12 +60,6 @@ using ::android::hidl::manager::V1_0::IServiceNotification;
 
 namespace android {
 namespace hardware {
-
-#if defined(__ANDROID_RECOVERY__)
-static constexpr bool kIsRecovery = true;
-#else
-static constexpr bool kIsRecovery = false;
-#endif
 
 static void waitForHwServiceManager() {
     // TODO(b/31559095): need bionic host so that we can use 'prop_info' returned
@@ -273,11 +265,6 @@ static bool matchPackageName(const std::string& lib, std::string* matchedName,
 }
 
 static void registerReference(const hidl_string &interfaceName, const hidl_string &instanceName) {
-    if (kIsRecovery) {
-        // No hwservicemanager in recovery.
-        return;
-    }
-
     sp<IServiceManager1_0> binderizedManager = defaultServiceManager();
     if (binderizedManager == nullptr) {
         LOG(WARNING) << "Could not registerReference for "
@@ -385,12 +372,10 @@ struct PassthroughServiceManager : IServiceManager1_1 {
             for (const std::string &lib : libs) {
                 const std::string fullPath = path + lib;
 
-                if (kIsRecovery || path == HAL_LIBRARY_PATH_SYSTEM) {
+                if (path == HAL_LIBRARY_PATH_SYSTEM) {
                     handle = dlopen(fullPath.c_str(), dlMode);
                 } else {
-#if !defined(__ANDROID_RECOVERY__) && defined(__ANDROID__)
                     handle = android_load_sphal_library(fullPath.c_str(), dlMode);
-#endif
                 }
 
                 if (handle == nullptr) {
@@ -743,24 +728,20 @@ sp<::android::hidl::base::V1_0::IBase> getRawServiceInternal(const std::string& 
 
     sp<IServiceManager1_1> sm;
     Transport transport = Transport::EMPTY;
-    if (kIsRecovery) {
-        transport = Transport::PASSTHROUGH;
-    } else {
-        sm = defaultServiceManager1_1();
-        if (sm == nullptr) {
-            ALOGE("getService: defaultServiceManager() is null");
-            return nullptr;
-        }
-
-        Return<Transport> transportRet = sm->getTransport(descriptor, instance);
-
-        if (!transportRet.isOk()) {
-            ALOGE("getService: defaultServiceManager()->getTransport returns %s",
-                  transportRet.description().c_str());
-            return nullptr;
-        }
-        transport = transportRet;
+    sm = defaultServiceManager1_1();
+    if (sm == nullptr) {
+        ALOGE("getService: defaultServiceManager() is null");
+        return nullptr;
     }
+
+    Return<Transport> transportRet = sm->getTransport(descriptor, instance);
+
+    if (!transportRet.isOk()) {
+        ALOGE("getService: defaultServiceManager()->getTransport returns %s",
+              transportRet.description().c_str());
+        return nullptr;
+    }
+    transport = transportRet;
 
     const bool vintfHwbinder = (transport == Transport::HWBINDER);
     const bool vintfPassthru = (transport == Transport::PASSTHROUGH);
